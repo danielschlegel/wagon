@@ -21,11 +21,13 @@ module Locomotive::Wagon
       precompile(decorated_entity)
 
       resource = if (_entity = remote_entity(decorated_entity)).nil?
-        api_client.theme_assets.create(decorated_entity.to_hash)
-      else
-        raise SkipPersistingException.new if same?(decorated_entity, _entity)
-        api_client.theme_assets.update(_entity._id, decorated_entity.to_hash)
-      end
+                   api_client.theme_assets.create(decorated_entity.to_hash)
+                 else
+                   if ENV['WAGON_SKIP_ASSETS'].nil? || ENV['WAGON_SKIP_ASSETS'].to_s != "false"
+                     raise SkipPersistingException.new if same?(decorated_entity, _entity)
+                   end
+                   api_client.theme_assets.update(_entity._id, decorated_entity.to_hash)
+                 end
 
       register_url(resource)
     end
@@ -97,7 +99,7 @@ module Locomotive::Wagon
 
     def sprockets_env
       @sprockets_env ||= Locomotive::Steam::SprocketsEnvironment.new(File.join(path, 'public'),
-        minify: ENV['WAGON_NO_MINIFY_ASSETS'].present? ? false : true)
+                                                                     minify: ENV['WAGON_NO_MINIFY_ASSETS'].present? ? false : true)
     end
 
     def skip?(entity)
